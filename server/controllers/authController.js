@@ -1,13 +1,26 @@
 const bcrypt = require('bcrypt')
 const User = require('../models/User')
 const jwt = require('jsonwebtoken')
-const Tag = require('../models/Tag')
-
+/**
+ * Функция генерации jwt токена
+ * @param  id {string} id пользователя
+ * @param  name {string} имя пользователя
+ * @returns jwt token
+ */
 function generateJWT(id, name) {
   return jwt.sign({ id, name }, process.env.SECRET_KEY, { expiresIn: '24h' })
 }
 
 class authController {
+  /**
+   * Функция регистрации пользователя
+   * @param req.body.name - имя пользователя
+   * @param req.body.password - пароль пользователя
+   * @description При получении имени, которое уже есть в бд, возвращается сообщение о том, что такой
+   * пользователь уже существует. Если такого пользователя нет, то хешируется пароль и создается
+   * новый документ с введенным именем и захешированным паролем
+   * @returns user doc
+   */
   async registration(req, res) {
     try {
       const personName = req.body.name
@@ -35,7 +48,16 @@ class authController {
       res.status(400).json({ message: 'Ошибка регистрации' })
     }
   }
-
+  /**
+   * Функция входа пользователя
+   * @param req.body.name - имя пользователя
+   * @param req.body.password - пароль пользователя
+   * @description На вход получает имя и пароль. Если пользователя с таким именем нет, то возвращается сообщение
+   * об этом и работа функции заканчивается. Если такой пользователь существует, то текущий пароль сравнивается
+   * с захешированным из бд. Если проверка пройдена, то генерируется jwt токен и возвращается в ответе.
+   * Если проверка не пройдена, то пользователь получает сообщение об ошибка входа
+   * @returns jwt token
+   */
   async login(req, res) {
     try {
       const name = req.body.name
@@ -56,15 +78,6 @@ class authController {
       console.log(error)
       res.status(400).json({ message: 'Ошибка входа' })
     }
-  }
-  async createTag(req, res) {
-    const { name } = req.body
-    const doc = new Tag({
-      name: name,
-    })
-
-    await doc.save().then(() => console.log('Tag saved'))
-    res.send(doc)
   }
 }
 
