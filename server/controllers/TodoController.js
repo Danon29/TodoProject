@@ -126,9 +126,37 @@ class TodoController {
   }
 
   async findAllTodo(req, res) {
-    const tags = JSON.stringify(req.query.tags)
+    const tags = req.query.tags
+    const limit = req.query.limit || 5
+    const skip = req.query.skip || 0
 
-    res.send(tags)
+    if (typeof tags === 'undefined') {
+      const todos = await Todo.find({}).skip(skip).limit(limit)
+
+      return res.send(todos)
+    }
+
+    let tagArray = []
+
+    if (typeof tags === 'object') {
+      for (let i = 0; i < tags.length; i++) {
+        const allTags = await Tag.findOne({ name: tags[i] })
+        tagArray.push(allTags._id)
+      }
+
+      const todos = await Todo.find({ tags: { $in: tagArray } })
+        .skip(skip)
+        .limit(limit)
+
+      return res.send(todos)
+    }
+
+    const tagId = await Tag.findOne({ name: tags })
+    const todos = await Todo.find({ tags: { $all: tagId } })
+      .skip(skip)
+      .limit(limit)
+
+    res.send(todos)
   }
 }
 
